@@ -5,7 +5,7 @@ import time
 square_width = 10 #pixels
 grid_width = 51
 pixels_wide = square_width * grid_width
-speed = 10 #blocks per second
+ms_per_block = 5 # screen refreshes per move
 
 if __name__ == '__main__':
 	pygame.init()
@@ -17,11 +17,16 @@ if __name__ == '__main__':
 	controller = GameController(model)
 
 	running = True
+	count = 0
 	while running:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				running = False
 			controller.handle_event(event)
-		model.update_snake()
+		count += 1
+		if count == ms_per_block:
+			model.update_snake()
+			model.collision()
+			count = 0
 		view.draw()
 		time.sleep(.001)

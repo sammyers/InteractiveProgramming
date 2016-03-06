@@ -16,10 +16,16 @@ class LinkedList(object):
 	def __init__(self, head=None):
 		self.head = head
 
-	def insert(self, data):
+	def insert(self, data, index=0):
 		new_node = Node(data)
-		new_node.set_next(self.head)
-		self.head = new_node
+		current = self.head
+		count = 0
+		while count < index:
+			count += 1
+			current = current.get_next()
+		new_node.set_next(current)
+		if index == 0:
+			self.head = new_node
 
 	def size(self):
 		current = self.head

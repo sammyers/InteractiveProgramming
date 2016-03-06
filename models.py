@@ -35,24 +35,31 @@ class GameController(object):
 	def handle_event(self, event):
 		if event.type != pygame.KEYDOWN:
 			return
-		if event.key == pygame.K_LEFT:
-			self.model.snake.direction = 'left'
-			#self.model.move_snake(x - 1, y)
-		if event.key == pygame.K_RIGHT:
-			self.model.snake.direction = 'right'
-			#self.model.move_snake(x + 1, y)
-		if event.key == pygame.K_UP:
-			self.model.snake.direction = 'up'
-			#self.model.move_snake(x, y - 1)
-		if event.key == pygame.K_DOWN:
-			self.model.snake.direction = 'down'
-			#self.model.move_snake(x, y + 1)
-
+		control_dict = {
+						pygame.K_LEFT: 'left',
+						pygame.K_RIGHT: 'right',
+						pygame.K_UP: 'up',
+						pygame.K_DOWN: 'down'
+						}
+		opposite = {
+					'up': 'down',
+					'down': 'up',
+					'left': 'right',
+					'right': 'left',
+					None: None
+					}
+		new_direction = control_dict[event.key]
+		if new_direction != opposite[self.model.snake.direction]:
+			self.model.snake.direction = new_direction 
 class GameModel(object):
 	def __init__(self, dimensions=50):
 		self.grid = GameGrid(dimensions)
 		self.snake = Snake(dimensions/2)
 		self.grid.grid[dimensions/2][dimensions/2] = self.snake.head.data
+		self.foods = []
+		self.walls = []
+		self.dead = False
+		self.make_first_walls()
 		self.make_food()
 
 	def move_snake(self, to_x, to_y):
@@ -60,18 +67,24 @@ class GameModel(object):
 		for part in self.snake.get_list():
 			self.grid.grid[part.x][part.y] = None
 		# Move snake internally
-		self.snake.move(to_x, to_y)
+		grow = bool(self.snake.growth_counter)
+		self.snake.move(to_x, to_y, grow)
+		if grow:
+			self.snake.growth_counter -= 1
 		# Update in grid
 		for part in self.snake.get_list():
 			self.grid.grid[part.x][part.y] = part
 
 	def make_food(self):
-		x = random.randrange(len(self.grid.grid))
-		y = random.randrange(len(self.grid.grid[x]))
-		self.food = Food(x, y)
-		self.grid.grid[x][y] = self.food
+		x = random.randrange(1, len(self.grid.grid) - 1)
+		y = random.randrange(1, len(self.grid.grid[x]) - 1)
+		new_food = Food(x, y)
+		self.foods.append(new_food)
+		self.grid.grid[x][y] = new_food
 
 	def update_snake(self):
+		if self.dead:
+			return
 		x = self.snake.head.data.x
 		y = self.snake.head.data.y
 		if self.snake.direction == 'left':
@@ -83,6 +96,50 @@ class GameModel(object):
 		if self.snake.direction == 'down':
 			self.move_snake(x, y + 1)
 
+	def collision(self):
+		"""
+		Check if the Snake's head is hitting a wall or a food.
+		Act on those.
+		"""
+		x = self.snake.head.data.x
+		y = self.snake.head.data.y
+	
+		# Check for wall collision
+		for a_wall in self.walls:
+			if a_wall.x == x and a_wall.y == y:
+				self.die()		
+
+		# Check for food collision
+		for i, apple in enumerate(self.foods):
+			if apple.x == x and apple.y == y:
+				self.snake.grow()
+				del self.foods[i]
+				self.make_food()
+
+		# Check for snake collisions
+		for part in self.snake.get_list()[1:]:		# Don't check against the head
+			if part.x == x and part.y == y:
+				self.die()			
+	
+	def die(self):
+		self.dead = True
+	
+	def make_first_walls(self):
+		for i in range(len(self.grid.grid)):
+			first_wall = Wall(i, 0)
+			last_wall = Wall(i, len(self.grid.grid[i])-1)
+			self.grid.grid[i][0] = first_wall					# Make top and bottom lines 
+			self.grid.grid[i][-1] = last_wall
+			self.walls.extend((first_wall, last_wall))
+
+		for j in range(1, len(self.grid.grid[0])):				# Make side walls
+			first_wall = Wall(0, j)
+			last_wall = Wall(len(self.grid.grid[j])-1, j)
+			self.grid.grid[0][j] = first_wall
+			self.grid.grid[-1][j] = last_wall
+			self.walls.extend((first_wall, last_wall))
+
+
 class GameGrid(object):
 	def __init__(self, dimensions):
 		self.grid = []
@@ -90,9 +147,7 @@ class GameGrid(object):
 			self.grid.append([])
 			for j in range(dimensions):
 				self.grid[i].append(None)
-				if i == 0 or i == dimensions - 1 or j == 0 or j == dimensions - 1:
-					self.grid[i][j] = Wall()
-
+				
 	def __repr__(self):
 		repr_string = ''
 		for i in range(len(self.grid)):
@@ -108,30 +163,39 @@ class SnakeBodyPart(object):
 		self.index = index
 
 class Snake(LinkedList):
-	def __init__(self, position, direction=None):
+	def __init__(self, position, direction=None, growth_rate=3):
 		head = Node(SnakeBodyPart(position, position))
 		super(Snake, self).__init__(head)
 		self.direction = direction
+		self.growth_counter = 0
+		self.growth_rate = growth_rate
 	
-	def move(self, to_x, to_y):
+	def move(self, to_x, to_y, eaten=False):
 		""" Takes a tuple of position"""
 		# Move internally
 		new_head = SnakeBodyPart(to_x, to_y)
 		self.insert(new_head)
-		self.delete()
+		if not eaten:
+			self.delete()
+
+	def grow(self):
+		self.growth_counter += self.growth_rate
+		
 
 class Food(object):
 	color = 'yellow'
 
 	def __init__(self, x, y):
-		self.x = x
-		self.y = y
+		self.x, self.y = (x, y)
 
 	def __repr__(self):
 		return 'Food'
 
 class Wall(object):
 	color = 'red'
+
+	def __init__(self, x, y):
+		self.x, self.y = (x, y)
 
 	def __repr__(self):
 		return 'Wall'
