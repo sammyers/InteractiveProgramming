@@ -1,4 +1,6 @@
 import pygame
+from linkedlist import Node, LinkedList
+import random
 
 class GameView(object):
 	def __init__(self, model, screen, square_size=10):
@@ -34,34 +36,51 @@ class GameController(object):
 		if event.type != pygame.KEYDOWN:
 			return
 		if event.key == pygame.K_LEFT:
-			x = self.model.snake.parts[0].x
-			y = self.model.snake.parts[0].y
-			self.model.move_snake(x - 1, y)
+			self.model.snake.direction = 'left'
+			#self.model.move_snake(x - 1, y)
 		if event.key == pygame.K_RIGHT:
-			x = self.model.snake.parts[0].x
-			y = self.model.snake.parts[0].y
-			self.model.move_snake(x + 1, y)
+			self.model.snake.direction = 'right'
+			#self.model.move_snake(x + 1, y)
 		if event.key == pygame.K_UP:
-			x = self.model.snake.parts[0].x
-			y = self.model.snake.parts[0].y
-			self.model.move_snake(x, y - 1)
+			self.model.snake.direction = 'up'
+			#self.model.move_snake(x, y - 1)
 		if event.key == pygame.K_DOWN:
-			x = self.model.snake.parts[0].x
-			y = self.model.snake.parts[0].y
-			self.model.move_snake(x, y + 1)
+			self.model.snake.direction = 'down'
+			#self.model.move_snake(x, y + 1)
 
 class GameModel(object):
 	def __init__(self, dimensions=50):
 		self.grid = GameGrid(dimensions)
 		self.snake = Snake(dimensions/2)
-		self.grid.grid[dimensions/2][dimensions/2] = self.snake
+		self.grid.grid[dimensions/2][dimensions/2] = self.snake.head.data
+		self.make_food()
 
 	def move_snake(self, to_x, to_y):
 		# Delete in the grid
-		self.grid.grid[self.snake.parts[0].x][self.snake.parts[0].y] = None   # Be careful in the future when implementing more snake per snake
+		for part in self.snake.get_list():
+			self.grid.grid[part.x][part.y] = None
+		# Move snake internally
 		self.snake.move(to_x, to_y)
 		# Update in grid
-		self.grid.grid[to_x][to_y] = self.snake.parts[0]
+		for part in self.snake.get_list():
+			self.grid.grid[part.x][part.y] = part
+
+	def make_food(self):
+		x = random.randrange(len(self.grid.grid))
+		y = random.randrange(len(self.grid.grid[x]))
+		self.grid.grid[x][y] = Food()
+
+	def update_snake(self):
+		x = self.snake.head.data.x
+		y = self.snake.head.data.y
+		if self.snake.direction == 'left':
+			self.move_snake(x - 1, y)
+		if self.snake.direction == 'right':
+			self.move_snake(x + 1, y)
+		if self.snake.direction == 'up':
+			self.move_snake(x, y - 1)
+		if self.snake.direction == 'down':
+			self.move_snake(x, y + 1)
 
 class GameGrid(object):
 	def __init__(self, dimensions):
@@ -81,29 +100,30 @@ class GameGrid(object):
 				repr_string += ('\n')
 		return repr_string
 
-	def update(self, snake):
-		for part in snake.parts:
-			x = part.x
-			y = part.y
-			self.grid[x][y] = part
-
 class SnakeBodyPart(object):
 	color = 'green'
-	def __init__(self, x, y):
+	def __init__(self, x, y, index=0):
 		self.x, self.y = (x, y)
+		self.index = index
 
-class Snake(object):
-	def __init__(self, position):
-		self.parts = [SnakeBodyPart(position, position)]
+class Snake(LinkedList):
+	def __init__(self, position, direction=None):
+		head = Node(SnakeBodyPart(position, position))
+		super(Snake, self).__init__(head)
+		self.direction = direction
 	
 	def move(self, to_x, to_y):
 		""" Takes a tuple of position"""
 		# Move internally
-		self.parts[0].x = to_x
-		self.parts[0].y = to_y
+		new_head = SnakeBodyPart(to_x, to_y)
+		self.insert(new_head)
+		self.delete()
 
 class Food(object):
-	pass
+	color = 'yellow'
+
+	def __repr__(self):
+		return 'Food'
 
 class Wall(object):
 	color = 'red'

@@ -2,12 +2,14 @@ import pygame
 from models import *
 import time
 
-square_width = 10
+square_width = 10 #pixels
 grid_width = 51
+pixels_wide = square_width * grid_width
+speed = 10 #blocks per second
 
 if __name__ == '__main__':
 	pygame.init()
-	size = (square_width * grid_width, square_width * grid_width)
+	size = (pixels_wide, pixels_wide)
 	screen = pygame.display.set_mode(size)
 
 	model = GameModel(grid_width)
@@ -20,5 +22,6 @@ if __name__ == '__main__':
 			if event.type == pygame.QUIT:
 				running = False
 			controller.handle_event(event)
+		model.update_snake()
 		view.draw()
 		time.sleep(.001)
