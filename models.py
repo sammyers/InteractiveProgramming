@@ -68,7 +68,8 @@ class GameModel(object):
 	def make_food(self):
 		x = random.randrange(len(self.grid.grid))
 		y = random.randrange(len(self.grid.grid[x]))
-		self.grid.grid[x][y] = Food()
+		self.food = Food(x, y)
+		self.grid.grid[x][y] = self.food
 
 	def update_snake(self):
 		x = self.snake.head.data.x
@@ -121,6 +122,10 @@ class Snake(LinkedList):
 
 class Food(object):
 	color = 'yellow'
+
+	def __init__(self, x, y):
+		self.x = x
+		self.y = y
 
 	def __repr__(self):
 		return 'Food'
