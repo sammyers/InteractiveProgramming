@@ -41,7 +41,7 @@ class GameController(object):
 						pygame.K_UP: 'up',
 						pygame.K_DOWN: 'down'
 						}
-		opposite = {
+		opposites = {
 					'up': 'down',
 					'down': 'up',
 					'left': 'right',
@@ -49,7 +49,7 @@ class GameController(object):
 					None: None
 					}
 		new_direction = control_dict[event.key]
-		if new_direction != opposite[self.model.snake.direction]:
+		if new_direction != opposites[self.model.snake.direction] or self.model.snake.size() == 1:
 			self.model.snake.direction = new_direction
 
 
@@ -84,7 +84,7 @@ class GameModel(object):
 			y = random.randrange(1, len(self.grid.grid[x]) - 1)
 			return (x, y)
 		point = random_point()
-		while SnakeBodyPart(*point) in self.snake.get_list():
+		while SnakeBodyPart(point[0], point[1]) in self.snake.get_list():
 			point = random_point()
 		new_food = Food(*point)
 		self.foods.append(new_food)
@@ -159,11 +159,13 @@ class GameGrid(object):
 				repr_string += ('\n')
 		return repr_string
 
+
 class SnakeBodyPart(object):
 	color = 'green'
 	def __init__(self, x, y, index=0):
 		self.x, self.y = (x, y)
 		self.index = index
+
 
 class Snake(LinkedList):
 	def __init__(self, position, direction=None, growth_rate=4):
@@ -198,6 +200,7 @@ class Food(object):
 	def __repr__(self):
 		return 'Food'
 
+
 class Wall(object):
 	color = 'red'
 
@@ -206,7 +209,3 @@ class Wall(object):
 
 	def __repr__(self):
 		return 'Wall'
-
-if __name__ == '__main__':
-	grid = GameGrid(11)
-	print grid
