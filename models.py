@@ -10,14 +10,23 @@ class GameView(object):
 
 	def draw(self):
 		self.screen.fill(pygame.Color('black'))
+
+		# Place the appropriate rectangle for every element of the grid (None, SnakeBodyPart, Wall or Food)
 		for i in range(len(self.model.grid.grid)):
 			for j in range(len(self.model.grid.grid[i])):
 				get_rect = pygame.Rect(*self.coord_to_pixels((i, j)))
 				try: # try to get color attribute, if 
-					color = self.model.grid.grid[i][j].color
+					color = self.model.grid.grid[i][j].color if not self.model.snake.dead else self.model.grid.grid[i][j].dead_color
 				except:
-					color = 'black'
-				pygame.draw.rect(self.screen, pygame.Color(color), get_rect)
+					color = pygame.Color('black')
+				pygame.draw.rect(self.screen, color, get_rect)
+
+		self.print_score()
+
+		# Blit the death screen if the snake is dead
+		if self.model.snake.dead:
+			self.print_death_text('Wasted', 64)
+
 		pygame.display.update()	
 
 	def coord_to_pixels(self, coords):
@@ -26,6 +35,33 @@ class GameView(object):
 		top = self.square_size * coords[1]
 		width, height = (self.square_size, self.square_size)
 		return (left, top, width, height)
+
+	def print_death_text(self, death_message, font_size):
+		font = pygame.font.Font(None, font_size)
+
+		background = pygame.Surface(self.screen.get_size())
+		background = background.convert()
+
+		text = font.render(death_message, 1, (200, 0, 0, 1))
+		textpos = text.get_rect()
+		textpos.centerx = background.get_rect().centerx
+		textpos.centery = background.get_rect().centerx  # centerx such that the text is at the center of the square field
+		self.screen.blit(text, textpos)
+
+	def print_score(self):
+		score_str = 'Score: ' + str(self.model.score2)
+
+		font = pygame.font.Font(None, 20)  # How to pass font size?
+		screen_size = self.screen.get_size()
+		background = pygame.Surface( ( screen_size[0], screen_size[1]-screen_size[0] ) )
+		background = background.convert()
+
+		text = font.render(score_str, 1, (255, 255, 255, 1))
+		textpos = text.get_rect()
+		textpos.x = 10
+		textpos.centery = sum(screen_size)/2
+		self.screen.blit(text, textpos)
+
 
 
 class GameController(object):
@@ -51,6 +87,8 @@ class GameController(object):
 		new_direction = control_dict[event.key]
 		if new_direction != opposites[self.model.snake.direction] or self.model.snake.size() == 1:
 			self.model.snake.direction = new_direction
+			self.model.score2 -= 1
+
 
 
 class GameModel(object):
@@ -63,6 +101,8 @@ class GameModel(object):
 		self.dead = False
 		self.make_first_walls()
 		self.make_food()
+		self.score = 0
+		self.score2 = 0
 
 	def make_first_walls(self):
 		for i in range(len(self.grid.grid)):
@@ -136,6 +176,8 @@ class GameModel(object):
 				self.snake.grow()
 				del self.foods[i]
 				self.make_food()
+				self.score += 10   # Have the score based off of len(snake)?
+				self.score2 += 10
 
 		# Check for snake collisions
 		for part in self.snake.get_list()[1:]:		# Don't check against the head
@@ -161,7 +203,8 @@ class GameGrid(object):
 
 
 class SnakeBodyPart(object):
-	color = 'green'
+	color = pygame.Color('green')
+	dead_color = pygame.Color(78 ,78 ,78 ,255)
 	def __init__(self, x, y, index=0):
 		self.x, self.y = (x, y)
 		self.index = index
@@ -192,7 +235,8 @@ class Snake(LinkedList):
 
 
 class Food(object):
-	color = 'yellow'
+	color = pygame.Color('yellow')
+	dead_color = pygame.Color(210, 210, 210, 255)
 
 	def __init__(self, x, y):
 		self.x, self.y = (x, y)
@@ -202,8 +246,8 @@ class Food(object):
 
 
 class Wall(object):
-	color = 'red'
-
+	color = pygame.Color('red')
+	dead_color = pygame.Color(128, 128, 128, 255)	
 	def __init__(self, x, y):
 		self.x, self.y = (x, y)
 

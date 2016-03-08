@@ -6,10 +6,11 @@ square_width = 10 #pixels
 grid_width = 51
 pixels_wide = square_width * grid_width
 ms_per_block = 6 # screen refreshes per move
+score_font_size = 14
 
 if __name__ == '__main__':
 	pygame.init()
-	size = (pixels_wide, pixels_wide)
+	size = (pixels_wide, pixels_wide + score_font_size + 14)
 	screen = pygame.display.set_mode(size)
 
 	model = GameModel(grid_width)
