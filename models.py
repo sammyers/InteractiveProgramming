@@ -37,6 +37,8 @@ class GameView(object):
 		return (left, top, width, height)
 
 	def print_death_text(self, death_message, font_size):
+
+
 		font = pygame.font.Font(None, font_size)
 
 		background = pygame.Surface(self.screen.get_size())
@@ -51,14 +53,14 @@ class GameView(object):
 	def print_score(self):
 		score_str = 'Score: ' + str(self.model.score2)
 
-		font = pygame.font.Font(None, 20)  # How to pass font size?
 		screen_size = self.screen.get_size()
+		font = pygame.font.Font(None, int(0.06*screen_size[0]))#20)  # How to pass font size?
 		background = pygame.Surface( ( screen_size[0], screen_size[1]-screen_size[0] ) )
 		background = background.convert()
 
 		text = font.render(score_str, 1, (255, 255, 255, 1))
 		textpos = text.get_rect()
-		textpos.x = 10
+		textpos.x = int(0.03*screen_size[0])
 		textpos.centery = sum(screen_size)/2
 		self.screen.blit(text, textpos)
 
@@ -69,8 +71,21 @@ class GameController(object):
 		self.model = model
 
 	def handle_event(self, event):
+		if event.type == pygame.QUIT:
+			return False
+
 		if event.type != pygame.KEYDOWN:
-			return
+			return True
+
+		if self.model.snake.dead:
+			if event.key == pygame.K_q:
+				# Quit
+				return False
+			elif event.key == pygame.K_r:
+				# Restart the game.
+				self.model.__init__()
+				return True
+
 		control_dict = {
 						pygame.K_LEFT: 'left',
 						pygame.K_RIGHT: 'right',
@@ -84,10 +99,15 @@ class GameController(object):
 					'right': 'left',
 					None: None
 					}
-		new_direction = control_dict[event.key]
-		if new_direction != opposites[self.model.snake.direction] or self.model.snake.size() == 1:
+
+		new_direction = control_dict.get(event.key, None) # control_dict[event.key]
+		if new_direction == None:
+			return True
+		if (new_direction != opposites[self.model.snake.direction] or self.model.snake.size() == 1):
 			self.model.snake.direction = new_direction
 			self.model.score2 -= 1
+
+		return True
 
 
 
@@ -182,7 +202,8 @@ class GameModel(object):
 		# Check for snake collisions
 		for part in self.snake.get_list()[1:]:		# Don't check against the head
 			if part.x == x and part.y == y:
-				self.snake.die()		
+				self.snake.die()
+
 	
 
 class GameGrid(object):
