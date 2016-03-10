@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 from model import BackgroundObject
+from helpers import vector_add, vector_multiply
 
 class GameView(object):
     """
@@ -20,8 +21,8 @@ class GameView(object):
             return tuple(mapped)
 
         #Orientation vectors from the perspective of the player
-        up_vector = self.model.plane.up
-        right_vector = self.model.plane.right
+        up_vector = np.array(self.model.plane.up)
+        right_vector = np.array(self.model.plane.right)
         direction_vector = np.add(up_vector, right_vector)
 
         slice_depth = self.model.plane.depth
@@ -30,6 +31,7 @@ class GameView(object):
 
         background_slices = [depth for depth in range(len(cube)) if depth != slice_depth] #All slice indices except the foreground
         for depth in background_slices:
+            print 'slice' + str(depth)
             origin = map_origin(depth)      #Starting point (lower-right corner) for a given slice
             for i in range(len(cube)):
                 for j in range(len(cube)):

@@ -7,7 +7,7 @@ import time
 square_width = 10 # pixels
 grid_width = 51
 pixels_wide = square_width * grid_width
-ms_per_block = 1 # screen refreshes per move
+ms_per_block = 2 # screen refreshes per move
 score_font_size = 14
 
 if __name__ == '__main__':
@@ -22,6 +22,7 @@ if __name__ == '__main__':
 	running = True
 	count = 0
 	while running:
+		view.draw()
 		for event in pygame.event.get():
 			# if event.type == pygame.QUIT:
 			# 	running = False
@@ -31,6 +32,6 @@ if __name__ == '__main__':
 			model.update_snake()
 			model.check_collision()
 			count = 0
-		view.draw()
+
 		time.sleep(.001)
 	pygame.QUIT
