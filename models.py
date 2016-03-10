@@ -195,13 +195,8 @@ class GameModel(object):
 		self.walls = []
 		self.dead = False
 		self.plane = Plane()
-<<<<<<< HEAD
-		#self.make_random_walls()
-=======
-		#self.make_first_walls()
 		#self.make_random_walls()
 		self.make_blob_walls(6, 9)
->>>>>>> ae84e2841f10cb69b53f174d8444c26cf6d2017a
 		self.make_food()
 		self.score = 0
 		self.score2 = 0	
@@ -250,7 +245,7 @@ class GameModel(object):
 
 				if stagnate == 0:
 					block_length = 0
-		print 'Number of Walls:', len(self.walls)
+		#print 'Number of Walls:', len(self.walls)
 
 	def make_blob_walls(self, num_blobs, size_blobs):
 		square_dimensions = len(self.grid.grid[0][0])
@@ -265,30 +260,30 @@ class GameModel(object):
 			# Make blobs off of those
 			self.make_blob(origin, 0.6, size_blobs)
 
-		print len(self.walls)
+		#print len(self.walls)
 
 
 	def make_blob(self, origin, proba, depth):
 		square_dimensions = len(self.grid.grid[0][0])
 
-		print 'Recursing'
+		#print 'Recursing'
 
 		if depth == 0:
-			print 'Stopping Condition'
+			#print 'Stopping Condition'
 			return
 
 		directions = [(1,0,0),(0,1,0),(0,0,1),(-1,0,0),(0,-1,0),(0,0,-1)]
 		for one_direction in directions:
 			new_origin = tuple(np.add(origin,one_direction))
 
-			print self.grid.tuple_get(new_origin) != None
-			print self.tuple_in_range(new_origin, 0, square_dimensions-1)
-			print random.random() < proba
-			print
+		#	print self.grid.tuple_get(new_origin) != None
+		#	print self.tuple_in_range(new_origin, 0, square_dimensions-1)
+		#	print random.random() < proba
+		#	print
 
 
 			if (self.grid.tuple_get(new_origin) == None) and self.tuple_in_range(new_origin, 0, square_dimensions-1) and (random.random() < proba):
-				print 'Making new wall'
+				#print 'Making new wall'
 
 				# Set walls in internal list of walls
 				new_wall = Wall(*new_origin)
