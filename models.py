@@ -68,7 +68,7 @@ class GameView(object):
 
 		# Blit the death screen if the snake is dead
 		if self.model.snake.dead:
-			self.print_death_text('Wasted', 64)
+			self.print_death_text('WASTED', 64)
 
 		pygame.display.update()	
 
@@ -282,14 +282,14 @@ class GameModel(object):
 		#	print
 
 
-			if (self.grid.tuple_get(new_origin) == None) and self.tuple_in_range(new_origin, 0, square_dimensions-1) and (random.random() < proba):
+			if self.tuple_in_range(new_origin, 0, square_dimensions-1) and (self.grid.tuple_get(new_origin) == None) and (random.random() < proba):
 				#print 'Making new wall'
 
 				# Set walls in internal list of walls
 				new_wall = Wall(*new_origin)
 				self.walls.append(new_wall)
 				# Set wall in the grid
-				self.grid.tuple_set(new_origin, new_origin)
+				self.grid.tuple_set(new_origin, Wall(*new_origin))
 				# Recurse
 				#self.make_blob(new_origin, proba*(1-1/float(depth)), depth-1)
 				self.make_blob(new_origin, proba, depth-1)
@@ -379,7 +379,7 @@ class GameModel(object):
 	
 		# Check for wall collision
 		for a_wall in self.walls:
-			if a_wall.x == x and a_wall.y == y:
+			if a_wall.x == x and a_wall.y == y and a_wall.z == z:
 				self.snake.die()		
 
 		# Check for food collision
