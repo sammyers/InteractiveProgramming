@@ -11,7 +11,7 @@ class GameView(object):
 
 	def get_slice(self):
 		
-		def map_origin():
+		def map_origin(depth):
 			map_dict = {-1: len(cube) - 1, 1: 0, 0: depth}
 			mapped = [map_dict[value] for value in direction_vector]
 			return tuple(mapped)
@@ -19,18 +19,18 @@ class GameView(object):
 		up_vector = self.model.plane.up
 		right_vector = self.model.plane.right
 		direction_vector = np.add(up_vector, right_vector)
-		depth = self.model.plane.depth
-		cube = self.model.grid.grid
-		origin = map_origin()
-
-		grid = []
+		slice_depth = self.model.plane.depth
+		cube = self.model.grid.grid	
+		origin = map_origin(slice_depth)
+		grid = [[None for y in range(len(cube))] for x in range(len(cube))]
+	#	for depth in range(len(cube)):# + range(slice_depth + 1, len(cube)):
+			#origin = map_origin(depth)	
 		for i in range(len(cube)):
-			row = []
 			for j in range(len(cube)):
 				position = np.add(origin, np.add(np.multiply(i, right_vector), np.multiply(j, up_vector)))
 				x, y, z = (position[0], position[1], position[2])
-				row.append(cube[x][y][z])
-			grid.append(row)
+				grid[i][j] = cube[x][y][z]
+		slice_origin = map_origin(slice_depth)
 		return grid
 
 	def draw(self):
@@ -42,7 +42,7 @@ class GameView(object):
 			for j in range(len(plane[i])):
 				get_rect = pygame.Rect(*self.coord_to_pixels((i, j)))
 				try: # try to get color attribute, if 
-					color = plane[i][j].color if not self.model.snake.dead else plane[i][j].dead_color
+					color = plane[i][j].background_color if not self.model.snake.dead else plane[i][j].dead_color
 				except:
 					color = pygame.Color('black')
 				pygame.draw.rect(self.screen, color, get_rect)
@@ -63,7 +63,6 @@ class GameView(object):
 		return (left, top, width, height)
 
 	def print_death_text(self, death_message, font_size):
-
 
 		dead_font = pygame.font.Font(None, font_size)
 		options_font = pygame.font.Font(None, font_size/2)
@@ -109,7 +108,6 @@ class GameView(object):
 		self.screen.blit(text, textpos)
 
 
-
 class GameController(object):
 	def __init__(self, model):
 		self.model = model
@@ -127,8 +125,10 @@ class GameController(object):
 				return False
 			elif event.key == pygame.K_r:
 				# Restart the game.
-				self.model.__init__()
+				self.model.restart()
 				return True
+
+		old_direction = self.model.snake.direction
 
 		directions = ['up', 'left', 'down', 'right']
 
@@ -139,11 +139,14 @@ class GameController(object):
 		orient_dict = {key: value for key, value in zip(orientation_keys, directions)}
 
 		if event.key in direction_keys:
-			self.model.snake.change_direction(control_dict[event.key])
-			self.model.score2 -= 1
+			self.model.snake.change_direction(control_dict[event.key])	
+			if old_direction is not None and old_direction != self.model.snake.direction:
+				self.model.score2 -= 1
+
 		if event.key in orientation_keys:
 			self.model.change_orientation(orient_dict[event.key])
-			self.model.score2 -= 1
+			if old_direction is not None:
+				self.model.score2 -= 1
 		return True
 
 
@@ -179,7 +182,7 @@ class GameModel(object):
 		def random_point():
 			x = random.randrange(1, len(self.grid.grid) - 1)
 			y = random.randrange(1, len(self.grid.grid[x]) - 1)
-			z = 0 #random.randrange(1, len(self.grid.grid[x][y]) - 1)
+			z = random.randrange(1, len(self.grid.grid[x][y]) - 1)
 			return (x, y, z)
 		point = random_point()
 		while SnakeBodyPart(*point) in self.snake.get_list():
@@ -221,12 +224,14 @@ class GameModel(object):
 		self.move_snake(*new_position)
 		print new_position
 
-	def change_orientation(self, direction):
+	def change_orientation(self, direction):	
 		getattr(self.plane, 'turn_' + direction)() # re-orient the plane accordingly
 		head = self.snake.head.data
+		direction = tuple(np.add(self.plane.up, self.plane.right))
 		position = (head.x, head.y, head.z)
-		depth_vector = np.multiply((1, 1, 1) - abs(np.add(self.plane.up, self.plane.right)), position)
-		self.plane.depth = [x for x in depth_vector if x != 0][0]
+		depth_index = direction.index(0)
+		depth =  position[depth_index]
+		self.plane.depth = depth
 
 	def check_collision(self):
 		"""
@@ -255,6 +260,9 @@ class GameModel(object):
 		for part in self.snake.get_list()[1:]:		# Don't check against the head
 			if part.x == x and part.y == y and part.z == z:
 				self.snake.die()
+
+	def restart(self):
+		self.__init__()
 	
 
 class GameGrid(object):
@@ -298,7 +306,8 @@ class Plane(object):
 class SnakeBodyPart(object):
 
 	color = pygame.Color('green')
-	dead_color = pygame.Color(78 ,78 ,78 ,255)
+	dead_color = pygame.Color(78, 78, 78, 255)
+	background_color = pygame.Color(78, 78, 78, 100)
 
 	def __init__(self, x, y, z):
 		self.x, self.y, self.z = (x, y, z)
@@ -338,8 +347,10 @@ class Snake(LinkedList):
 
 
 class Food(object):
+
 	color = pygame.Color('yellow')
 	dead_color = pygame.Color(210, 210, 210, 255)
+	background_color = pygame.Color(210, 210, 210, 100)
 
 	def __init__(self, x, y, z):
 		self.x, self.y, self.z = (x, y, z)
@@ -351,7 +362,8 @@ class Food(object):
 class Wall(object):
 
 	color = pygame.Color('red')
-	dead_color = pygame.Color(128, 128, 128, 255)	
+	dead_color = pygame.Color(128, 128, 128, 255)
+	background_color = pygame.Color(128, 128, 128, 100)
 
 	def __init__(self, x, y, z):
 		self.x, self.y, self.z = (x, y, z)
