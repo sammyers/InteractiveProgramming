@@ -280,18 +280,6 @@ class Plane(object):
 		self.right = tuple(np.cross(self.right, self.up))
 
 
-class SnakeBodyPart(object):
-	"""
-	Snake component block to be stored in the grid or contained in a Snake object.
-	"""
-	color = pygame.Color('green')
-	dead_color = pygame.Color(78, 78, 78, 255)
-	background_color = pygame.Color(78, 78, 78, 100)
-
-	def __init__(self, x, y, z):
-		self.x, self.y, self.z = (x, y, z)
-
-
 class Snake(LinkedList):
 	"""
 	Contains all of the individual snake components, as well as information about its own direction and state of growth.
@@ -323,7 +311,6 @@ class Snake(LinkedList):
 		if not eaten:
 			self.delete() 	#Shift the rest of the snake forward by deleting the tail.
 							#If the snake has eaten, allow it to grow by just moving the head forward.
-
 	def grow(self):
 		"""Respond to the snake eating a food block by initializing an increase in length"""
 		self.growth_counter += self.growth_rate
@@ -333,27 +320,38 @@ class Snake(LinkedList):
 		self.dead = True
 
 
-class Food(object):
+class Block(object):
+	"""
+	Generic block object.
+	"""
+	def __init__(self, x, y, z):
+		self.x, self.y, self.z = (x, y, z)
+
+
+class SnakeBodyPart(Block):
+	"""
+	Snake component block to be stored in the grid or contained in a Snake object.
+	"""
+	color = pygame.Color('green')
+	dead_color = pygame.Color(78, 78, 78, 255)
+	background_color = pygame.Color(78, 78, 78, 100)
+
+
+class Food(Block):
 	"""A food block with its own position and color data, to be stored in the model and in the grid"""
 	color = pygame.Color('yellow')
 	dead_color = pygame.Color(210, 210, 210, 255)
 	background_color = pygame.Color(210, 210, 210, 100)
 
-	def __init__(self, x, y, z):
-		self.x, self.y, self.z = (x, y, z)
-
 	def __repr__(self):
 		return 'Food'
 
 
-class Wall(object):
+class Wall(Block):
 	"""Wall block, used in the same manner as a food block"""
 	color = pygame.Color('red')
 	dead_color = pygame.Color(128, 128, 128, 255)
 	background_color = pygame.Color(128, 128, 128, 100)
-
-	def __init__(self, x, y, z):
-		self.x, self.y, self.z = (x, y, z)
 
 	def __repr__(self):
 		return 'Wall'
