@@ -1,5 +1,7 @@
 import pygame
-from models import *
+from model import GameModel
+from view import GameView
+from controller import GameController
 import time
 
 square_width = 10 # pixels
