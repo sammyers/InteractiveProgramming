@@ -39,16 +39,34 @@ class GameView(object):
 	def print_death_text(self, death_message, font_size):
 
 
-		font = pygame.font.Font(None, font_size)
+		dead_font = pygame.font.Font(None, font_size)
+		options_font = pygame.font.Font(None, font_size/2)
+		options_color = (181, 180, 103)
 
 		background = pygame.Surface(self.screen.get_size())
 		background = background.convert()
 
-		text = font.render(death_message, 1, (200, 0, 0, 1))
+		# Wasted
+		text = dead_font.render(death_message, 1, (200, 0, 0, 1))
 		textpos = text.get_rect()
 		textpos.centerx = background.get_rect().centerx
 		textpos.centery = background.get_rect().centerx  # centerx such that the text is at the center of the square field
 		self.screen.blit(text, textpos)
+
+		# Play Again
+		replay = options_font.render("R: Play Again", 1, options_color)
+		replay_pos = replay.get_rect()
+		replay_pos.centerx = background.get_rect().centerx
+		replay_pos.centery = background.get_rect().centerx + font_size*3/4  # centerx such that the text is at the center of the square field
+		self.screen.blit(replay, replay_pos)
+
+		# Play Again
+		quit = options_font.render("Q: Quit", 1, options_color)
+		quit_pos = quit.get_rect()
+		quit_pos.centerx = background.get_rect().centerx
+		quit_pos.centery = background.get_rect().centerx + font_size*3/4 + font_size/2  # centerx such that the text is at the center of the square field
+		self.screen.blit(quit, quit_pos)
+
 
 	def print_score(self):
 		score_str = 'Score: ' + str(self.model.score2)
