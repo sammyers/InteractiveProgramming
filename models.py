@@ -160,7 +160,8 @@ class GameModel(object):
 		self.dead = False
 		self.plane = Plane()
 		#self.make_first_walls()
-		self.make_random_walls()
+		#self.make_random_walls()
+		self.make_blob_walls(6, 9)
 		self.make_food()
 		self.score = 0
 		self.score2 = 0
@@ -224,6 +225,61 @@ class GameModel(object):
 					block_length = 0
 		print 'Number of Walls:', len(self.walls)
 
+	def make_blob_walls(self, num_blobs, size_blobs):
+		square_dimensions = len(self.grid.grid[0][0])
+		# Generate a bunch of points (blob centers)
+		for a_blob in range(num_blobs):
+			origin = self.rand_3tuple(0, square_dimensions-1)
+
+			# Make sure there is nothing there
+			while self.grid.tuple_get(origin) != None:				
+				origin = self.rand_3tuple(0, square_dimensions-1)
+
+			# Make blobs off of those
+			self.make_blob(origin, 0.6, size_blobs)
+
+		print len(self.walls)
+
+
+	def make_blob(self, origin, proba, depth):
+		square_dimensions = len(self.grid.grid[0][0])
+
+		print 'Recursing'
+
+		if depth == 0:
+			print 'Stopping Condition'
+			return
+
+		directions = [(1,0,0),(0,1,0),(0,0,1),(-1,0,0),(0,-1,0),(0,0,-1)]
+		for one_direction in directions:
+			new_origin = tuple(np.add(origin,one_direction))
+
+			print self.grid.tuple_get(new_origin) != None
+			print self.tuple_in_range(new_origin, 0, square_dimensions-1)
+			print random.random() < proba
+			print
+
+
+			if (self.grid.tuple_get(new_origin) == None) and self.tuple_in_range(new_origin, 0, square_dimensions-1) and (random.random() < proba):
+				print 'Making new wall'
+
+				# Set walls in internal list of walls
+				new_wall = Wall(*new_origin)
+				self.walls.append(new_wall)
+				# Set wall in the grid
+				self.grid.tuple_set(new_origin, new_origin)
+				# Recurse
+				#self.make_blob(new_origin, proba*(1-1/float(depth)), depth-1)
+				self.make_blob(new_origin, proba, depth-1)
+
+	def tuple_in_range(self, your_tuple, a, b):
+		"""
+		Return true if each element of the tuple is within the range (a,b) inclusive
+		"""
+		for element in your_tuple:
+			if not (a <= element and element <= b):
+				return False
+		return True
 
 	def make_food(self):
 		def random_point():
@@ -335,6 +391,15 @@ class GameGrid(object):
 			if i != len(self.grid) - 1:
 				repr_string += ('\n')
 		return repr_string
+
+	def tuple_get(self, xyz):
+		x, y, z = xyz
+		return self.grid[x][y][z]
+
+	def tuple_set(self, xyz, value):
+		x, y, z = xyz
+		self.grid[x][y][z] = value
+		return
 
 
 class Plane(object):
