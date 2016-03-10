@@ -32,20 +32,6 @@ class GameView(object):
 				row.append(cube[x][y][z])
 			grid.append(row)
 		return grid
-		#xy = (1, 1, 0)
-		#yz = (0, 1, 1)
-		#xz = (1, 0, 1)
-		#if tuple(np.abs(np.add(up, right))) == xy:
-		#	z = self.model.plane.depth
-		#	newgrid = [[y[z] for y in x] for x in cube]
-		#if tuple(np.abs(np.add(up, right))) == xz:
-		#	y = self.model.plane.depth
-		#	newgrid = [[z for z in x[y]] for x in cube]
-		#if tuple(np.abs(np.add(up, right))) == yz:
-		#	x = self.model.plane.depth
-		#	newgrid = [[z for z in y] for y in cube[x]]
-		#return newgrid
-
 
 	def draw(self):
 		plane = self.get_slice()
@@ -56,7 +42,7 @@ class GameView(object):
 			for j in range(len(plane[i])):
 				get_rect = pygame.Rect(*self.coord_to_pixels((i, j)))
 				try: # try to get color attribute, if 
-					color = self.model.grid.grid[i][j].color if not self.model.snake.dead else self.model.grid.grid[i][j].dead_color
+					color = plane[i][j].color if not self.model.snake.dead else plane[i][j].dead_color
 				except:
 					color = pygame.Color('black')
 				pygame.draw.rect(self.screen, color, get_rect)
