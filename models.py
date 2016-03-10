@@ -32,32 +32,27 @@ class GameView(object):
 				row.append(cube[x][y][z])
 			grid.append(row)
 		return grid
-		#xy = (1, 1, 0)
-		#yz = (0, 1, 1)
-		#xz = (1, 0, 1)
-		#if tuple(np.abs(np.add(up, right))) == xy:
-		#	z = self.model.plane.depth
-		#	newgrid = [[y[z] for y in x] for x in cube]
-		#if tuple(np.abs(np.add(up, right))) == xz:
-		#	y = self.model.plane.depth
-		#	newgrid = [[z for z in x[y]] for x in cube]
-		#if tuple(np.abs(np.add(up, right))) == yz:
-		#	x = self.model.plane.depth
-		#	newgrid = [[z for z in y] for y in cube[x]]
-		#return newgrid
-
 
 	def draw(self):
 		plane = self.get_slice()
 		self.screen.fill(pygame.Color('black'))
+
+		# Place the appropriate rectangle for every element of the grid (None, SnakeBodyPart, Wall or Food)	
 		for i in range(len(plane)):
 			for j in range(len(plane[i])):
 				get_rect = pygame.Rect(*self.coord_to_pixels((i, j)))
 				try: # try to get color attribute, if 
-					color = plane[i][j].color
+					color = plane[i][j].color if not self.model.snake.dead else plane[i][j].dead_color
 				except:
-					color = 'black'
-				pygame.draw.rect(self.screen, pygame.Color(color), get_rect)
+					color = pygame.Color('black')
+				pygame.draw.rect(self.screen, color, get_rect)
+
+		self.print_score()
+
+		# Blit the death screen if the snake is dead
+		if self.model.snake.dead:
+			self.print_death_text('Wasted', 64)
+
 		pygame.display.update()	
 
 	def coord_to_pixels(self, coords):
@@ -67,14 +62,73 @@ class GameView(object):
 		width, height = (self.square_size, self.square_size)
 		return (left, top, width, height)
 
+	def print_death_text(self, death_message, font_size):
+
+
+		dead_font = pygame.font.Font(None, font_size)
+		options_font = pygame.font.Font(None, font_size/2)
+		options_color = (181, 180, 103)
+
+		background = pygame.Surface(self.screen.get_size())
+		background = background.convert()
+
+		# Wasted
+		text = dead_font.render(death_message, 1, (200, 0, 0, 1))
+		textpos = text.get_rect()
+		textpos.centerx = background.get_rect().centerx
+		textpos.centery = background.get_rect().centerx  # centerx such that the text is at the center of the square field
+		self.screen.blit(text, textpos)
+
+		# Play Again
+		replay = options_font.render("R: Play Again", 1, options_color)
+		replay_pos = replay.get_rect()
+		replay_pos.centerx = background.get_rect().centerx
+		replay_pos.centery = background.get_rect().centerx + font_size*3/4  # centerx such that the text is at the center of the square field
+		self.screen.blit(replay, replay_pos)
+
+		# Play Again
+		quit = options_font.render("Q: Quit", 1, options_color)
+		quit_pos = quit.get_rect()
+		quit_pos.centerx = background.get_rect().centerx
+		quit_pos.centery = background.get_rect().centerx + font_size*3/4 + font_size/2  # centerx such that the text is at the center of the square field
+		self.screen.blit(quit, quit_pos)
+
+
+	def print_score(self):
+		score_str = 'Score: ' + str(self.model.score2)
+
+		screen_size = self.screen.get_size()
+		font = pygame.font.Font(None, int(0.06*screen_size[0]))#20)  # How to pass font size?
+		background = pygame.Surface( ( screen_size[0], screen_size[1]-screen_size[0] ) )
+		background = background.convert()
+
+		text = font.render(score_str, 1, (255, 255, 255, 1))
+		textpos = text.get_rect()
+		textpos.x = int(0.03*screen_size[0])
+		textpos.centery = sum(screen_size)/2
+		self.screen.blit(text, textpos)
+
+
 
 class GameController(object):
 	def __init__(self, model):
 		self.model = model
 
 	def handle_event(self, event):
+		if event.type == pygame.QUIT:
+			return False
+
 		if event.type != pygame.KEYDOWN:
-			return
+			return True
+
+		if self.model.snake.dead:
+			if event.key == pygame.K_q:
+				# Quit
+				return False
+			elif event.key == pygame.K_r:
+				# Restart the game.
+				self.model.__init__()
+				return True
 
 		directions = ['up', 'left', 'down', 'right']
 
@@ -86,8 +140,11 @@ class GameController(object):
 
 		if event.key in direction_keys:
 			self.model.snake.change_direction(control_dict[event.key])
+			self.model.score2 -= 1
 		if event.key in orientation_keys:
 			self.model.change_orientation(orient_dict[event.key])
+			self.model.score2 -= 1
+		return True
 
 
 class GameModel(object):
@@ -101,6 +158,8 @@ class GameModel(object):
 		self.plane = Plane()
 		#self.make_first_walls()
 		self.make_food()
+		self.score = 0
+		self.score2 = 0
 	
 	def make_first_walls(self):
 		for i in range(len(self.grid.grid)):
@@ -189,6 +248,8 @@ class GameModel(object):
 				self.snake.grow()
 				del self.foods[i]
 				self.make_food()
+				self.score += 10   # Have the score based off of len(snake)?
+				self.score2 += 10
 
 		# Check for snake collisions
 		for part in self.snake.get_list()[1:]:		# Don't check against the head
@@ -235,10 +296,12 @@ class Plane(object):
 
 
 class SnakeBodyPart(object):
-	color = 'green'
-	def __init__(self, x, y, z, index=0):
+
+	color = pygame.Color('green')
+	dead_color = pygame.Color(78 ,78 ,78 ,255)
+
+	def __init__(self, x, y, z):
 		self.x, self.y, self.z = (x, y, z)
-		self.index = index
 
 
 class Snake(LinkedList):
@@ -275,7 +338,8 @@ class Snake(LinkedList):
 
 
 class Food(object):
-	color = 'yellow'
+	color = pygame.Color('yellow')
+	dead_color = pygame.Color(210, 210, 210, 255)
 
 	def __init__(self, x, y, z):
 		self.x, self.y, self.z = (x, y, z)
@@ -285,7 +349,9 @@ class Food(object):
 
 
 class Wall(object):
-	color = 'red'
+
+	color = pygame.Color('red')
+	dead_color = pygame.Color(128, 128, 128, 255)	
 
 	def __init__(self, x, y, z):
 		self.x, self.y, self.z = (x, y, z)
