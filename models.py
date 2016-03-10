@@ -157,6 +157,7 @@ class GameModel(object):
 		self.dead = False
 		self.plane = Plane()
 		#self.make_first_walls()
+		self.make_random_walls()
 		self.make_food()
 		self.score = 0
 		self.score2 = 0
@@ -174,6 +175,52 @@ class GameModel(object):
 			self.grid.grid[0][j] = first_wall
 			self.grid.grid[-1][j] = last_wall
 			self.walls.extend((first_wall, last_wall))
+
+	def make_random_walls(self):
+		square_dimensions = len(self.grid.grid[0][0])
+		num_blocks = 1000
+		block_length = 200
+		directions = [(1,0,0),(0,1,0),(0,0,1),(-1,0,0),(0,-1,0),(0,0,-1)]
+
+		# Number of block walls
+		for block in range(num_blocks):
+			print 'block:', block
+			stagnate = 100
+
+			# Select a random start point (that isn't a wall)
+			origin = self.rand_3tuple(0, square_dimensions-1)
+			x,y,z = origin
+
+			# Make sure there is nothing there
+			while self.grid.grid[x][y][z] != None:				
+				origin = self.rand_3tuple(0, square_dimensions-1)
+
+			# Sequentially choose where the next walls will be, add them to the grid and the list of walls
+			block_count = block_length
+			while block_length:
+
+				one_direction = random.choice(directions)
+				n_x,n_y,n_z = tuple(np.add(origin,one_direction) % square_dimensions)
+				cell_content = self.grid.grid[n_x][n_y][n_z]
+
+				for a_wall in self.walls:
+					print 'wall check'
+					if a_wall == cell_content:
+						origin = (a_wall.x, a_wall.y, a_wall.z) 
+						block_length -= 1
+						stagnate -= 1
+
+				if cell_content == None:
+					origin = (n_x,n_y,n_z)
+					new_wall = Wall(n_x,n_y,n_z)
+					self.walls.append(new_wall)
+					self.grid.grid[n_x][n_y][n_z] = new_wall
+					block_length -= 1
+
+				if stagnate == 0:
+					block_length = 0
+		print 'Number of Walls:', len(self.walls)
+
 
 	def make_food(self):
 		def random_point():
@@ -255,6 +302,12 @@ class GameModel(object):
 		for part in self.snake.get_list()[1:]:		# Don't check against the head
 			if part.x == x and part.y == y and part.z == z:
 				self.snake.die()
+
+	def rand_3tuple(self, lower, higher):
+		"""
+		Returns random 3-tuple (N_0, N_1, N_2) where lower <= N_x <= higher
+		"""
+		return (random.randint(lower, higher),random.randint(lower, higher) ,random.randint(lower, higher))
 	
 
 class GameGrid(object):
